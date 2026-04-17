@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auth Flow</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f0f0f0; }
+        .box { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #0066cc; }
+        .error { border-left-color: #cc0000; color: #cc0000; }
+        .success { border-left-color: #00cc00; color: #00cc00; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #222; color: #0f0; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Auth API Workflow</h1>
+    
+    <button onclick="testLogin()">1️⃣ Test Login</button>
+    <button onclick="testMe()">2️⃣ Test /auth/me</button>
+    <button onclick="clearAll()">Clear</button>
+    
+    <div id="output"></div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let globalToken = null;
+
+        function log(message, isError = false) {
+            const output = document.getElementById('output');
+            const className = isError ? 'box error' : 'box success';
+            output.innerHTML += `<div class="${className}">${escapeHtml(message)}</div>`;
+            console.log(message);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        async function testLogin() {
+            try {
+                log('⏳ Intentando login con demo@shoplotam.com...');
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'demo@shoplotam.com',
+                        password: 'demo1234'
+                    })
+                });
+
+                log(`📊 Status: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    log(`❌ Error: ${error}`, true);
+                    return;
+                }
+
+                const data = await response.json();
+                globalToken = data.access_token;
+                
+                log(`✅ Login exitoso!`);
+                log(`🔑 Token: ${globalToken.substring(0, 50)}...`);
+                log(`💾 Token guardado en variable global`);
+            } catch (error) {
+                log(`❌ Exception: ${error.message}`, true);
+            }
+        }
+
+        async function testMe() {
+            if (!globalToken) {
+                log(`❌ Primero ejecuta el test de Login!`, true);
+                return;
+            }
+
+            try {
+                log(`⏳ Llamando GET /auth/me con el token...`);
+                const response = await fetch(`${API_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${globalToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📊 Status: ${response.status} ${response.statusText}`);
+
+                const text = await response.text();
+                log(`📋 Response: ${text.substring(0, 200)}...`);
+
+                if (!response.ok) {
+                    log(`❌ Error en /auth/me`, true);
+                    return;
+                }
+
+                const data = JSON.parse(text);
+                log(`✅ /auth/me exitoso!`);
+                log(`👤 Usuario: ${data.email || data.id}`);
+            } catch (error) {
+                log(`❌ Exception: ${error.message}`, true);
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('output').innerHTML = '';
+            globalToken = null;
+        }
+
+        // Test CORS
+        log('🌐 Testing CORS from ' + window.location.href);
+    </script>
+</body>
+</html>
