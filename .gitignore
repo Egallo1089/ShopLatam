@@ -1,0 +1,27 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# Base de datos
+*.db
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Archivos de SO
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
